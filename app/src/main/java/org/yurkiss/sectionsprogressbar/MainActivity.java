@@ -45,6 +45,13 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
         img.setImageLevel(0);
+        SectionsProgressBar.Section section1 = new SectionsProgressBar.Section(25);
+        SectionsProgressBar.Section section2 = new SectionsProgressBar.Section(25, img);
+        SectionsProgressBar.Section section3 = new SectionsProgressBar.Section(25);
+        SectionsProgressBar.Section section4 = new SectionsProgressBar.Section(25, img);
+
+        img.addSection(section1);
+        img.addSection(section3);
 
 //        chartView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 //        img.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
@@ -75,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setSectionProgress(int value) {
         TransitionManager.beginDelayedTransition(mTransitionsContainer, new ProgressTransition());
-        value = Math.max(0, Math.min(100, value));
+        value = Math.max(0, Math.min(img.getMax(), value));
         img.setProgress(value);
 
     }
@@ -87,12 +94,22 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.b75)
     void OnClick75(View v) {
-        setSectionProgress(100);
+        setSectionProgress(img.getMax());
     }
 
     @OnClick(R.id.b15)
     void OnClick15(View v) {
-        setSectionProgress(img.getProgress() + 5);
+        setSectionProgress(img.getProgress() + 10);
+    }
+
+    @OnClick(R.id.bAdd)
+    void OnClickBAdd(View v) {
+        new SectionsProgressBar.Section(25, img);
+    }
+
+    @OnClick(R.id.bRemove)
+    void OnClickBRemove(View v) {
+        img.removeSection(0);
     }
 
 

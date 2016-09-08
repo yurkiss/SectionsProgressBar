@@ -12,10 +12,10 @@
     tools:context="org.yurkiss.sectionsprogressbar.MainActivity">
 
 
+        <!--android:background="#ffb5b5b5"-->
     <org.yurkiss.sectionsprogressbar.SectionsProgressBar
         android:id="@+id/img"
         android:padding="10dp"
-        android:background="#ffb5b5b5"
         android:layout_width="match_parent"
         android:layout_height="50dp" />
 
@@ -45,6 +45,18 @@
             android:id="@+id/b15"
             android:layout_width="wrap_content"
             android:text="+15%"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/bAdd"
+            android:layout_width="wrap_content"
+            android:text="+"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/bRemove"
+            android:layout_width="wrap_content"
+            android:text="-"
             android:layout_height="wrap_content" />
 
         <!--<org.yurkiss.progressbar.ChartView-->
