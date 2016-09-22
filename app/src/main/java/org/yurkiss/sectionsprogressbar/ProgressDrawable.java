@@ -15,37 +15,28 @@ import java.util.List;
  * Created by yurkiss on 7/24/16.
  */
 
-public class ProgressDrawable extends Drawable /*implements Animatable */ {
+public class ProgressDrawable extends Drawable {
 
     private static final float mStrokeWidth     = 5;
     public static final  int   CHECK_COLOR      = (0xFF4081 + 0xFF000000);
     public static final  int   UNCHECK_COLOR    = 0xffb5b5b5;
     public static final  int   INNER_BACK_COLOR = 0xffe2e2e2;
     public static final  int   WHITE_COLOR      = 0xffffffff;
-    private static final long  FRAME_DURATION   = 1000 / 60;
-//    private final static float OFFSET_PER_FRAME = 0.01f;
-//    private static final long ANIMATION_DURATION = 1500;
 
     private final Paint mBackPaint;
     private final Paint mFrontPaint;
     private final Paint mTextPaint;
     private final RectF rectF;
-    private       Rect  mBounds;
-    private       Rect  mFillingBounds;
+    private final Rect  mBounds;
+    private final Rect  mFillingBounds;
 
-    private int mPaintingDefaultPadding = 0;
     private List<SectionsProgressBar.Section> sections;
 
-    private float mBarHeight = 0.35f;
-
-    private boolean mRunning;
-    private long    mStartTime;
-    private long    duration;
-
-
-    private int mBarColor  = CHECK_COLOR;
+    private int mPaintingDefaultPadding = 0;
+    private float mRelativeBarHeight = 0.35f;
+    private int mBarColor           = CHECK_COLOR;
     private int mBackgroundBarColor = UNCHECK_COLOR;
-    private int mTextColor = 0xffffffff;
+    private int mTextColor          = 0xffffffff;
 
     public ProgressDrawable() {
         mBackPaint = new Paint();
@@ -87,49 +78,63 @@ public class ProgressDrawable extends Drawable /*implements Animatable */ {
     @Override
     public void draw(Canvas canvas) {
 
-        // draw "empty" progress background
-        drawProgressBar(canvas, mBackPaint, mBounds);
-
         // make filling progress smaller
         mFillingBounds.set(mBounds);
-        int d = 5;
-        mFillingBounds.left += d;
-        mFillingBounds.top += d;
-        mFillingBounds.right -= d;
-        mFillingBounds.bottom -= d;
+
+        // Coefficient of circles and bar reduction
+        // to make filling progress smaller
+        float reductCoef = 1f;
+
+        // draw "empty" progress background
+        drawProgressBar(canvas, mBackPaint, mBounds, reductCoef);
 
         // calculate progress for drawing filling progress
+        reductCoef = 0.8f;
         rectF.set(mFillingBounds);
         float ww = 0;
         for (int i = 0; i < sections.size(); i++) {
-            ww += calculateProgress(i, mFillingBounds);
+            ww += calculateProgress(i, mFillingBounds, reductCoef);
         }
+
         rectF.right = ww;
+//        if (ww > 0)
+//            System.out.println(rectF);
 
         canvas.save();
         canvas.clipRect(rectF);
-        drawProgressBar(canvas, mFrontPaint, mFillingBounds);
+        drawProgressBar(canvas, mFrontPaint, mFillingBounds, reductCoef);
         canvas.restore();
 
     }
 
-    private void drawProgressBar(Canvas canvas, Paint paint, Rect bounds) {
+    private void drawProgressBar(Canvas canvas, Paint paint, Rect bounds, float p) {
 
         int w = bounds.width();
         int h = bounds.height();
 
-        // draw bar
+        // Calculate bar reduction coefficient.
+        // Increase reduction by taking fraction of reduction coefficient
+        float pBar = (p < 1) ? p * 0.7f : p;
+
+        // Circles radius
+        float radius = h / 2f;
+
+        // Draw bar
         float rx = 20;
         float ry = 20;
 
-        float barH = bounds.height() * mBarHeight;
-        RectF rect = new RectF(bounds.left, bounds.centerY() - barH / 2, bounds.right, bounds.centerY() + barH / 2);
+        float barH = bounds.height() * mRelativeBarHeight * pBar;
+
+        float fillingPadding = radius - radius * p;
+        float barLeft = bounds.left + fillingPadding;
+        float barRight = bounds.right - fillingPadding;
+
+        RectF rect = new RectF(barLeft, bounds.centerY() - barH / 2, barRight, bounds.centerY() + barH / 2);
         canvas.drawRoundRect(rect, rx, ry, paint);
 
         // draw circles
-        float radius = h / 2f;
         int c = sections.size() - 1;
-        float dx = (float) (w - 2 * radius) / (float) c;
+        float dx = (w - 2 * radius) / (float) c;
 
         float textSize = radius * 0.75f;
         mTextPaint.setTextSize(textSize);
@@ -137,108 +142,41 @@ public class ProgressDrawable extends Drawable /*implements Animatable */ {
         for (int i = 0; i < sections.size(); i++) {
             float cx = bounds.left + radius + dx * i;
             float cy = bounds.exactCenterY();
-            canvas.drawCircle(cx, cy, radius, paint);
+            canvas.drawCircle(cx, cy, radius * p, paint);
             canvas.drawText(String.valueOf(i + 1), cx, cy + textSize / 4f, mTextPaint);
         }
     }
 
-    float calculateProgress(int secIndex, Rect bounds) {
+    float calculateProgress(int secIndex, Rect bounds, float rCoef) {
 
-        int w = bounds.width();
         int h = bounds.height();
+        float radius = h / 2f;
+
+        float w = bounds.width();
 
         SectionsProgressBar.Section section = sections.get(secIndex);
 
-        float coef = (float) section.getProgress() / (float) section.getMax();
+        float coefProgress = (float) section.getProgress() / (float) section.getMax();
 
-        float radius = h / 2f;
         int c = sections.size() - 1;
-        float dx = (float) (w - 2 * radius) / (float) c;
+        float dx = (w - 2 * radius) / (float) c;
 
-        float cx = bounds.left + dx * secIndex;
-        float cx2;
+        float left = bounds.left;
+        float lx1 = left + dx * secIndex;
+        float lx2;
         if (secIndex < sections.size() - 1) {
-            cx2 = bounds.left + dx * (secIndex + 1);
+            lx2 = left + dx * (secIndex + 1);
         } else {
-            cx2 = bounds.right;
+            lx2 = bounds.right;
         }
 
-        return (cx2 - cx) * coef;
+//        if (coefProgress == 1)
+//        System.out.println(String.format("h:%s, w:%s, (%s - %s) = %s, dx: %s radius: %s", h, w, lx2, lx1, lx2 - lx1, dx, radius));
+
+        return (lx2 - lx1) * coefProgress;
 
     }
 
-
-//    @Override
-//    public void start() {
-//        if (!isRunning()) {
-//            mRunning = true;
-//
-//            mStartTime = AnimationUtils.currentAnimationTimeMillis();
-//
-//            scheduleSelf(mUpdater, SystemClock.uptimeMillis() + FRAME_DURATION);
-//            invalidateSelf();
-//        }
-//    }
-//
-//    @Override
-//    public void stop() {
-//        if (isRunning()) {
-//            unscheduleSelf(mUpdater);
-//            mRunning = false;
-//        }
-//    }
-//
-//    @Override
-//    public void scheduleSelf(Runnable what, long when) {
-//        mRunning = true;
-//        super.scheduleSelf(what, when);
-//    }
-
-    //    @Override
-    public boolean isRunning() {
-        return mRunning;
-    }
-
-//    public int getMax() {
-//        return max;
-//    }
-//
-//    public void setMax(int max) {
-//        this.max = max;
-//    }
-
-
-//    private float getOffsetPerFrame() {
-//        return  1f / (float)(mBounds.right - mBounds.left);
-//    }
-
-//    private final Runnable mUpdater = new Runnable() {
-//        @Override
-//        public void run() {
-//            long now = AnimationUtils.currentAnimationTimeMillis();
-
-//            getOffsetPerFrame();
-//            long duration = now - mStartTime;
-//            if (duration >= ANIMATION_DURATION) {
-//                mStartColor = mEndColor;
-//                mEndColor = randomColor();
-//                mStartTime = now;
-//                mCurrentColor = mStartColor;
-//            } else {
-//                float fraction = duration / (float) ANIMATION_DURATION;
-//                //@formatter:off
-//                mCurrentColor = Color.rgb(
-//                        evaluate(fraction, Color.red(mStartColor), Color.red(mEndColor)),     // red
-//                        evaluate(fraction, Color.green(mStartColor), Color.green(mEndColor)), // green
-//                        evaluate(fraction, Color.blue(mStartColor), Color.blue(mEndColor)));  // blue
-//                //@formatter:on
-//            }
-//            if (isRunning()) {
-//                scheduleSelf(mUpdater, AnimationUtils.currentAnimationTimeMillis() + FRAME_DURATION);
-//            }
-//            invalidateSelf();
-//        }
-//    };
 
     @Override
     public void setAlpha(int alpha) {
@@ -255,12 +193,12 @@ public class ProgressDrawable extends Drawable /*implements Animatable */ {
         return PixelFormat.TRANSLUCENT;
     }
 
-    public float getBarHeight() {
-        return mBarHeight;
+    public float getRelativeBarHeight() {
+        return mRelativeBarHeight;
     }
 
-    public void setBarHeight(float percent) {
-        this.mBarHeight = percent;
+    public void setRelativeBarHeight(float percent) {
+        this.mRelativeBarHeight = percent;
     }
 
 

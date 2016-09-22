@@ -5,8 +5,6 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
@@ -24,11 +22,8 @@ public class SectionsProgressBar extends ImageView {
 
     private List<Section> sections;
 
-    private int         progress;
-    private RectF       rectF;
-    private Rect        rect;
     private AnimatorSet animSet;
-    private int duration = 30 * 15;
+    private int duration = 30 * 16;
 
     public SectionsProgressBar(Context context) {
         super(context);
@@ -48,8 +43,6 @@ public class SectionsProgressBar extends ImageView {
         progressDrawable.setBarColor(0xFFFF4081);
 
         setImageDrawable(progressDrawable);
-        rectF = new RectF();
-        rect = new Rect();
 
     }
 
@@ -75,12 +68,15 @@ public class SectionsProgressBar extends ImageView {
         return progress;
     }
 
+    private boolean isLast(Section section) {
+        int i = sections.indexOf(section);
+        return i == sections.size() - 2;
+    }
+
     void setProgress(Section section, int progress) {
         List<Animator> animators = new ArrayList<>();
 
-        if (progress > section.getMax()) {
-            progress = section.getMax();
-        }
+        progress = Math.max(0, Math.min(section.getMax(), progress));
 
         int i = sections.indexOf(section);
         if (i >= 0) {
@@ -95,10 +91,20 @@ public class SectionsProgressBar extends ImageView {
             Animator animator = createAnimator(section, progress);
             animators.add(animator);
 
-            if (progress == 0) {
+            // For the terminal section set all progress if last is full
+            if (isLast(section)){
+                if (section.getMax() == progress) {
+                    SectionsProgressBar.Section terminalSec = sections.get(sections.size() - 1);
+                    animator = createAnimator(terminalSec, terminalSec.getMax());
+                    animators.add(animator);
+                }
+            }
+
+            // Decrement progress
+            if (progress < section.getProgress()) {
                 for (int p = i + 1; p < sections.size(); p++) {
                     Section sec = sections.get(p);
-                    animators.add(createAnimator(sec, 0));
+                    animators.add(createAnimator(sec, progress));
                 }
             }
 
@@ -114,17 +120,6 @@ public class SectionsProgressBar extends ImageView {
         return animSet != null && animSet.isStarted();
     }
 
-//    private void setProgress(int progress) {
-////        System.out.println(progress);
-//        if (!isAnimationStarted()) {
-//            animator = createAnimator(progress);
-//            animator.start();
-//            return;
-//        }
-//
-//        this.progress = Math.max(0, Math.min(getMax(), progress));
-//        postInvalidate();
-//    }
 
     public void setProgressBackgroundColor(int color) {
         progressDrawable.setBackgroundBarColor(color);
@@ -156,6 +151,19 @@ public class SectionsProgressBar extends ImageView {
             postInvalidate();
         }
     }
+
+    public List<Section> getSections() {
+        return sections;
+    }
+
+    public Section getSection(int i) {
+        if (i < sections.size()) {
+            return sections.get(i);
+        }
+        return null;
+    }
+
+
 
     public static class Section {
 
@@ -192,6 +200,14 @@ public class SectionsProgressBar extends ImageView {
             bar.setProgress(this, max);
         }
 
+        boolean isFull() {
+            return getProgress() == getMax();
+        }
+
+        boolean isEmpty() {
+            return getProgress() == 0;
+        }
+
         void attachProgressBar(SectionsProgressBar bar) {
             this.bar = bar;
         }
@@ -200,19 +216,19 @@ public class SectionsProgressBar extends ImageView {
             incrementProgress(1);
         }
 
+        public void setProgress(int pr) {
+            if (bar == null) {
+                throw new IllegalStateException("Section has to be attached to progress bar.");
+            }
+            bar.setProgress(this, pr);
+        }
+
         public void incrementProgress(int i) {
 
             if (bar == null) {
                 throw new IllegalStateException("Section has to be attached to progress bar.");
             }
             bar.setProgress(this, progress + i);
-        }
-
-        public void setProgress(int pr) {
-            if (bar == null) {
-                throw new IllegalStateException("Section has to be attached to progress bar.");
-            }
-            bar.setProgress(this, pr);
         }
 
         public void invalidateProgress() {
@@ -248,11 +264,6 @@ public class SectionsProgressBar extends ImageView {
 //        progressAnimator.setRepeatMode(ValueAnimator.RESTART);
 //        progressAnimator.setRepeatCount(ValueAnimator.INFINITE);
 
-//        AnimatorSet set = new AnimatorSet();
-//        Animator progressAnimator = getAnimator(SECONDARY_PROGRESS, new AccelerateDecelerateInterpolator());
-//        Animator secondaryProgressAnimator = getAnimator(PROGRESS, new AccelerateInterpolator());
-//        set.playTogether(progressAnimator, secondaryProgressAnimator);
-//        set.setDuration(duration);
         return progressAnimator;
     }
 
