@@ -1,4 +1,4 @@
-package org.yurkiss.sectionsprogressbar;
+package org.yurkiss.sectionprogressbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -92,7 +92,7 @@ public class SectionsProgressBar extends ImageView {
             animators.add(animator);
 
             // For the terminal section set all progress if last is full
-            if (isLast(section)){
+            if (isLast(section)) {
                 if (section.getMax() == progress) {
                     SectionsProgressBar.Section terminalSec = sections.get(sections.size() - 1);
                     animator = createAnimator(terminalSec, terminalSec.getMax());
@@ -162,7 +162,6 @@ public class SectionsProgressBar extends ImageView {
         }
         return null;
     }
-
 
 
     public static class Section {
@@ -243,26 +242,17 @@ public class SectionsProgressBar extends ImageView {
     private Animator createAnimator(final Section section, int newProgress) {
 
         ValueAnimator progressAnimator = ValueAnimator.ofInt(section.getProgress(), newProgress);
-//        ValueAnimator progressAnimator = ValueAnimator.ofObject(new FloatEvaluator(), scale, newScale);
         progressAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 int animatedValue = (int) animation.getAnimatedValue();
-//                setProgress(section, animatedValue);
-//                section.incrementProgress(animatedValue);
                 section.progress = animatedValue;
                 postInvalidate();
             }
         });
 
-//        ObjectAnimator progressAnimator = ObjectAnimator.ofInt(this, "progress", progress, newScale);
         progressAnimator.setInterpolator(new LinearInterpolator());
-//        duration = Math.abs(newScale - progress) * 16;
         progressAnimator.setDuration(duration);
-//        System.out.println(String.format("Duration: %s", duration));
-
-//        progressAnimator.setRepeatMode(ValueAnimator.RESTART);
-//        progressAnimator.setRepeatCount(ValueAnimator.INFINITE);
 
         return progressAnimator;
     }

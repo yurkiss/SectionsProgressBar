@@ -13,7 +13,7 @@
 
 
         <!--android:background="#ffb5b5b5"-->
-    <org.yurkiss.sectionsprogressbar.SectionsProgressBar
+    <org.yurkiss.sectionprogressbar.SectionsProgressBar
         android:id="@+id/img"
         android:padding="0dp"
         android:layout_width="match_parent"

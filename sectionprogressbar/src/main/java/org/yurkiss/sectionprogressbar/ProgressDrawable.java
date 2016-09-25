@@ -1,4 +1,4 @@
-package org.yurkiss.sectionsprogressbar;
+package org.yurkiss.sectionprogressbar;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
