@@ -24,7 +24,8 @@ public class ProgressDrawable extends Drawable {
     public static final  int   WHITE_COLOR      = 0xffffffff;
 
     private final Paint mBackPaint;
-    private final Paint mFrontPaint;
+    private final Paint mFillingPaint;
+    private final Paint mCirclesPaint;
     private final Paint mTextPaint;
     private final RectF rectF;
     private final Rect  mBounds;
@@ -32,11 +33,11 @@ public class ProgressDrawable extends Drawable {
 
     private List<SectionsProgressBar.Section> sections;
 
-    private int mPaintingDefaultPadding = 0;
-    private float mRelativeBarHeight = 0.35f;
-    private int mBarColor           = CHECK_COLOR;
-    private int mBackgroundBarColor = UNCHECK_COLOR;
-    private int mTextColor          = 0xffffffff;
+    private int   mPaintingDefaultPadding = 0;
+    private float mRelativeBarHeight      = 0.35f;
+    private int   mBarColor               = CHECK_COLOR;
+    private int   mBackgroundBarColor     = WHITE_COLOR; //UNCHECK_COLOR;
+    private int   mTextColor              = 0xffffffff;
 
     public ProgressDrawable() {
         mBackPaint = new Paint();
@@ -46,11 +47,17 @@ public class ProgressDrawable extends Drawable {
         mBackPaint.setStrokeWidth(mStrokeWidth);
 //        mBackPaint.setShadowLayer(10.0f, 0.0f, 0.0f, Color.GRAY);
 
-        mFrontPaint = new Paint();
-        mFrontPaint.setColor(mBarColor);
-        mFrontPaint.setAntiAlias(true);
-        mFrontPaint.setStyle(Paint.Style.FILL);
-        mFrontPaint.setStrokeWidth(mStrokeWidth);
+        mFillingPaint = new Paint();
+        mFillingPaint.setColor(mBarColor);
+        mFillingPaint.setAntiAlias(true);
+        mFillingPaint.setStyle(Paint.Style.FILL);
+        mFillingPaint.setStrokeWidth(mStrokeWidth);
+
+        mCirclesPaint = new Paint();
+        mCirclesPaint.setColor(INNER_BACK_COLOR);
+        mCirclesPaint.setAntiAlias(true);
+        mCirclesPaint.setStyle(Paint.Style.FILL);
+        mCirclesPaint.setStrokeWidth(mStrokeWidth);
 
         mTextPaint = new Paint();
         mTextPaint.setAntiAlias(true);
@@ -90,19 +97,22 @@ public class ProgressDrawable extends Drawable {
 
         // calculate progress for drawing filling progress
         reductCoef = 0.8f;
+
+        // draw emphasized empty circles
+        drawCircles(canvas, mCirclesPaint, mBounds, reductCoef);
+
         rectF.set(mFillingBounds);
         float ww = 0;
         for (int i = 0; i < sections.size(); i++) {
             ww += calculateProgress(i, mFillingBounds, reductCoef);
         }
-
         rectF.right = ww;
 //        if (ww > 0)
 //            System.out.println(rectF);
 
         canvas.save();
         canvas.clipRect(rectF);
-        drawProgressBar(canvas, mFrontPaint, mFillingBounds, reductCoef);
+        drawProgressBar(canvas, mFillingPaint, mFillingBounds, reductCoef);
         canvas.restore();
 
     }
@@ -133,17 +143,36 @@ public class ProgressDrawable extends Drawable {
         canvas.drawRoundRect(rect, rx, ry, paint);
 
         // draw circles
-        int c = sections.size() - 1;
-        float dx = (w - 2 * radius) / (float) c;
+        drawCircles(canvas, paint, bounds, p);
 
-        float textSize = radius * 0.75f;
-        mTextPaint.setTextSize(textSize);
 
-        for (int i = 0; i < sections.size(); i++) {
-            float cx = bounds.left + radius + dx * i;
-            float cy = bounds.exactCenterY();
-            canvas.drawCircle(cx, cy, radius * p, paint);
-            canvas.drawText(String.valueOf(i + 1), cx, cy + textSize / 4f, mTextPaint);
+    }
+
+    private void drawCircles(Canvas canvas, Paint paint, Rect bounds, float reductCoef) {
+
+        int w = bounds.width();
+        int h = bounds.height();
+
+        // Circles radius
+        float radius = h / 2f;
+
+
+        if (sections.size() > 0) {
+            int c = sections.size() - 1;
+            float dx = (w - 2 * radius) / (float) c;
+
+            float textSize = radius * 0.75f;
+            mTextPaint.setTextSize(textSize);
+
+            for (int i = 0; i < sections.size(); i++) {
+                float cx = bounds.left + radius + dx * i;
+                float cy = bounds.exactCenterY();
+                canvas.drawCircle(cx, cy, radius * reductCoef, paint);
+
+                float yPos = cy - ((mTextPaint.descent() + mTextPaint.ascent()) / 2);
+                float y = cy + textSize / 4f;
+                canvas.drawText(String.valueOf(i + 1), cx, yPos, mTextPaint);
+            }
         }
     }
 
@@ -155,8 +184,12 @@ public class ProgressDrawable extends Drawable {
         float w = bounds.width();
 
         SectionsProgressBar.Section section = sections.get(secIndex);
-
-        float coefProgress = (float) section.getProgress() / (float) section.getMax();
+        float coefProgress;
+        if (section.getMax() > 0) {
+            coefProgress = (float) section.getProgress() / (float) section.getMax();
+        } else {
+            coefProgress = 0;
+        }
 
         int c = sections.size() - 1;
         float dx = (w - 2 * radius) / (float) c;
@@ -208,7 +241,7 @@ public class ProgressDrawable extends Drawable {
 
     public void setBarColor(int mBarColor) {
         this.mBarColor = mBarColor;
-        mFrontPaint.setColor(mBarColor);
+        mFillingPaint.setColor(mBarColor);
     }
 
     public int getBackgroundBarColor() {

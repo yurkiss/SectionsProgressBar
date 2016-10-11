@@ -35,9 +35,6 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandler;
     private int mLevel;
     private int delayMillis;
-    private SectionsProgressBar.Section section1;
-    private SectionsProgressBar.Section section2;
-    private SectionsProgressBar.Section section4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +44,11 @@ public class MainActivity extends AppCompatActivity {
 //        img.startAnimation();
 
         ButterKnife.bind(this);
-        bar.setImageLevel(0);
-        section1 = new SectionsProgressBar.Section(250);
-        section2 = new SectionsProgressBar.Section(250, bar);
-        SectionsProgressBar.Section section3 = new SectionsProgressBar.Section(250);
-        section4 = new SectionsProgressBar.Section(250, bar);
+//        bar.setImageLevel(0);
+        SectionsProgressBar.Section section1 = new SectionsProgressBar.Section(0);
+        SectionsProgressBar.Section section2 = new SectionsProgressBar.Section(250, bar);
+        SectionsProgressBar.Section section3 = new SectionsProgressBar.Section(0);
+        SectionsProgressBar.Section section4 = new SectionsProgressBar.Section(100, bar);
 
         bar.addSection(section1);
         bar.addSection(section3);
